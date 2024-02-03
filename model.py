@@ -503,6 +503,25 @@ class StructuralCausalModel:
 
         self.query00 = functools.lru_cache(1024)(self.query00)
 
+    # 각 V별 가능한 values를 dict로 return
+    def all_values(self) -> dict:
+        
+        possible_values = defaultdict(set)
+
+        U = list(sorted(self.G.U | self.more_U))    # UC와 Uv를 합쳐서 sort
+        D = self.D                                  # binary domain
+        V_ordered = self.G.causal_order()           # V의 topological order
+
+        for u in product(*[D[U_i] for U_i in U]):  # d^|U|  # U들의 모든 combinations
+            assigned = dict(zip(U, u))              # U와 realization을 dict로 묶음
+
+            # evaluate values                       
+            for V_i in V_ordered:                                   # topological 순서로 V를 돌면서 assigned에 realization 추가(data generation)
+                assigned[V_i] = self.F[V_i](assigned)  # pa_i including unobserved
+                possible_values[V_i].add(assigned[V_i])
+            
+        return possible_values
+    
     # V, U, P_U, F를 이용해서 intervention, condition을 고려한 data generation + 보고싶은 outcome 변수의 확률 계산
     def query(self, outcome: Tuple, condition: dict = None, intervention: dict = None, verbose=False) -> defaultdict:
         """
@@ -550,7 +569,7 @@ class StructuralCausalModel:
                 continue
             normalizer += p_u                                                   # U 조합이 나올 확률을 계속 + -> condition 있는 경우 나눠주는 용도
             prob_outcome[tuple(assigned[V_i] for V_i in outcome)] += p_u        # outcome realization에 대한 확률+
-
+            # print(assigned, p_u)
             # print(prob_outcome, p_u) # outcome = ('Y') 면 0, 1일 확률, ('Y', 'Z')면 (0,0),(0,1),(1,0),(1,1)일 확률
 
         if prob_outcome:
