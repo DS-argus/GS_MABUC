@@ -123,7 +123,10 @@ class CausalDiagram:
             self._de = dict()  # cache
             assert self._ch.keys() <= self.V and self._pa.keys() <= self.V
         
-        self.bidirected_edges = list(bidirected_edges)
+        if bidirected_edges == None:
+            self.bidirected_edges = []
+        else:
+            self.bidirected_edges = list(bidirected_edges)  # class에서 입력안하면 bidirected edge가 []이 되는데 bidiredted가 없는 G를 do 하면 copy할 때 None이 돼서 오류 발생함
         self.edges = tuple((x, y) for x, ys in self._ch.items() for y in ys)
 
         # https://kimjingo.tistory.com/169 : lru_cache()
@@ -273,7 +276,7 @@ class CausalDiagram:
     def __getitem__(self, item) -> 'CausalDiagram':
         return self.induced(item)
 
-    # 일부 노드만으로 구성된 CD return?
+    # 일부 노드만으로 구성된 CD return -> G[G.An({'Y'})]
     def induced(self, v_or_vs) -> 'CausalDiagram':
         if set(v_or_vs) == self.V:
             return self
@@ -628,3 +631,12 @@ def cd2qcd(G: CausalDiagram) -> str:
         bipaths = [''.join(path) for path in bipaths]
 
     return f'qcd({paths}, {bipaths})'
+
+
+if __name__ == "__main__":
+    G = CausalDiagram({'X', 'Z', 'Y'}, 
+                    [('X', 'Z'), ('Z', 'Y')],
+                    [])
+    
+    print(G)
+    print(G.c_components())
