@@ -519,7 +519,7 @@ class StructuralCausalModel:
             assigned = dict(zip(U, u))              # U와 realization을 dict로 묶음
 
             # evaluate values                       
-            for V_i in V_ordered:                                   # topological 순서로 V를 돌면서 assigned에 realization 추가(data generation)
+            for V_i in V_ordered:  # topological 순서로 V를 돌면서 assigned에 realization 추가(data generation)
                 assigned[V_i] = self.F[V_i](assigned)  # pa_i including unobserved
                 possible_values[V_i].add(assigned[V_i])
             
