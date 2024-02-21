@@ -17,7 +17,7 @@ class ThicketFound(Exception):
         super().__init__(self._message)
 
 
-def ID(y: set, x: set, P: "Probability", G: "CausalDiagram", verbose: bool = False, tab: int = 0):
+def myID(y: set, x: set, P: "Probability", G: "CausalDiagram", verbose: bool = False, tab: int = 0):
     """
     OUTPUT : Expression in Latex 
 
@@ -49,7 +49,7 @@ def ID(y: set, x: set, P: "Probability", G: "CausalDiagram", verbose: bool = Fal
         else:
             P_out._var = anc
         # print(P_out.printLatex())
-        return ID(y, x.intersection(anc), P_out, G.induced(anc), verbose, tab=tab + 1)
+        return myID(y, x.intersection(anc), P_out, G.induced(anc), verbose, tab=tab + 1)
     
     # line 3
     # breakpoint()
@@ -59,7 +59,7 @@ def ID(y: set, x: set, P: "Probability", G: "CausalDiagram", verbose: bool = Fal
     if len(W)>0:
         if verbose: print('line 3')
         # print(P.printLatex())
-        return ID(y, x.union(W), P, G, verbose, tab=tab + 1)
+        return myID(y, x.union(W), P, G, verbose, tab=tab + 1)
 
     # line 4
     CCs = G[G.V-x].c_components
@@ -68,7 +68,7 @@ def ID(y: set, x: set, P: "Probability", G: "CausalDiagram", verbose: bool = Fal
         probabilities = set()
         for CC in CCs:
             probabilities.add(
-                ID(CC, G.V.difference(CC), P, G, verbose, tab=tab + 1))
+                myID(CC, G.V.difference(CC), P, G, verbose, tab=tab + 1))
         return Probability(recursive=True, children=probabilities, sumset=G.V.difference(y.union(x)))
 
 
@@ -105,13 +105,13 @@ def ID(y: set, x: set, P: "Probability", G: "CausalDiagram", verbose: bool = Fal
                     P_out = get_new_probability(P, {vertex}, cond)
                     probabilities.add(P_out)
                 
-                print(Probability(recursive=True, children=probabilities).printLatex())
+                # print(Probability(recursive=True, children=probabilities).printLatex())
                 
-                return ID(y, x.intersection(S_prime), Probability(recursive=True, children=probabilities),
+                return myID(y, x.intersection(S_prime), Probability(recursive=True, children=probabilities),
                             G.induced(S_prime), verbose, tab=tab + 1)
 
 
-def gID(Y: set, X: set, Z:set, P: "Probability", G: "CausalDiagram", verbose: bool = False, tab: int = 0):
+def mygID(Y: set, X: set, Z:set, P: "Probability", G: "CausalDiagram", verbose: bool = False, tab: int = 0):
     # breakpoint()
     # line 2 -> 여기도 line 7 처럼 수정해야할듯 이건 맞는 것 같기도 하고....
     for z in Z:
@@ -136,7 +136,7 @@ def gID(Y: set, X: set, Z:set, P: "Probability", G: "CausalDiagram", verbose: bo
             P_out._sumset = P._sumset | (G.V-anc)
         else:
             P_out._var = anc
-        return gID(Y, X & anc, Z, P_out, G.induced(anc), verbose, tab=tab + 1)
+        return mygID(Y, X & anc, Z, P_out, G.induced(anc), verbose, tab=tab + 1)
     
     # line 4
     G_do_x = G.do(X)
@@ -145,7 +145,7 @@ def gID(Y: set, X: set, Z:set, P: "Probability", G: "CausalDiagram", verbose: bo
     if len(W) > 0:
         if verbose: print("line 4")
 
-        return gID(Y, X | W, Z, P, G, verbose, tab=tab+1)
+        return mygID(Y, X | W, Z, P, G, verbose, tab=tab+1)
     
     # line 6
     CCs = G[G.V-X].c_components
@@ -156,7 +156,7 @@ def gID(Y: set, X: set, Z:set, P: "Probability", G: "CausalDiagram", verbose: bo
         probabilities= set()
         for CC in CCs:
             probabilities.add(
-                gID(CC, G.V-CC, Z, P, G, verbose, tab=tab+1))
+                mygID(CC, G.V-CC, Z, P, G, verbose, tab=tab+1))
         return Probability(recursive=True, children=probabilities, sumset=G.V - (Y|X))
         
     # line 7, 8
@@ -166,7 +166,7 @@ def gID(Y: set, X: set, Z:set, P: "Probability", G: "CausalDiagram", verbose: bo
             P_out = P.copy()
             P_out._do = (z-G.V) | (X&z)
             P_out._var = G.V
-            result = subID(Y, X-z, P_out, G.induced(G.V-(z&X)), verbose, tab=tab+1) 
+            result = mysubID(Y, X-z, P_out, G.induced(G.V-(z&X)), verbose, tab=tab+1) 
             if result:
                 return result
 
@@ -174,7 +174,7 @@ def gID(Y: set, X: set, Z:set, P: "Probability", G: "CausalDiagram", verbose: bo
     raise ThicketFound()   
         
 
-def subID(Y: set, X: set, Q: "Probability", G: "CausalDiagram", verbose: bool = False, tab: int = 0):
+def mysubID(Y: set, X: set, Q: "Probability", G: "CausalDiagram", verbose: bool = False, tab: int = 0):
 
     order = G.causal_order()
 
@@ -201,7 +201,7 @@ def subID(Y: set, X: set, Q: "Probability", G: "CausalDiagram", verbose: bool = 
             Q_out._sumset = Q._sumset.union(G.V - anc)
         else:
             Q_out._var = anc
-        return subID(Y, X & anc, Q_out, G.induced(anc), verbose, tab=tab + 1)
+        return mysubID(Y, X & anc, Q_out, G.induced(anc), verbose, tab=tab + 1)
     
     # line 13
     CCs = G.c_components
@@ -231,7 +231,7 @@ def subID(Y: set, X: set, Q: "Probability", G: "CausalDiagram", verbose: bool = 
                 cond = (prev & S_prime) | (prev - S_prime)
                 P_out = get_new_probability(Q, {vertex}, cond=cond)
                 probabilities.add(P_out)
-            return subID(Y, X & S_prime, Probability(recursive=True, children=probabilities),
+            return mysubID(Y, X & S_prime, Probability(recursive=True, children=probabilities),
                         G.induced(S_prime), verbose, tab=tab + 1)
 
 if __name__ == "__main__":
@@ -245,10 +245,19 @@ if __name__ == "__main__":
     # P = ID(y=set(['Y', 'Z1','Z2', 'Z3']), x=set(["X"]), P=Probability(var=G.V), G=G,verbose=True)
     # print(f"ID: {P.printLatex()}")
 
-    G = CausalDiagram({'X', 'W1', 'W2', 'W3', 'W4', 'W5', 'Y'}, 
-                    [('X', 'Y'), ('W1', 'W2'), ('W2', 'X'), ('W4', 'X'), ('W3', 'W4')],
-                    [('W1', 'W3', 'U_W1W3'), ('W2', 'W3', 'U_W2W3'), ('W3', 'W5', 'U_W3W5'), ('W4', 'W5', 'U_W4W5'), ('W1', 'Y', 'U_W1Y'), ('W1', 'X', 'U_W1X')])
+    # G = CausalDiagram({'X', 'W1', 'W2', 'W3', 'W4', 'W5', 'Y'}, 
+    #                 [('X', 'Y'), ('W1', 'W2'), ('W2', 'X'), ('W4', 'X'), ('W3', 'W4')],
+    #                 [('W1', 'W3', 'U_W1W3'), ('W2', 'W3', 'U_W2W3'), ('W3', 'W5', 'U_W3W5'), ('W4', 'W5', 'U_W4W5'), ('W1', 'Y', 'U_W1Y'), ('W1', 'X', 'U_W1X')])
 
-    P = ID(y=set(['Y']), x=set(["X"]), P=Probability(var=G.V), G=G,verbose=True)
-    # P1 = gID(Y=set(['Y']), X=set(["X"]), Z=frozenset([frozenset()]), P=Probability(var=G.V), G=G)
+    # P = ID(y=set(['Y']), x=set(["X"]), P=Probability(var=G.V), G=G,verbose=True)
+    # # P1 = gID(Y=set(['Y']), X=set(["X"]), Z=frozenset([frozenset()]), P=Probability(var=G.V), G=G)
+    # print(f"ID: {P.printLatex()}")
+
+    G = CausalDiagram({'A', 'X', 'B', 'C', 'Y'}, 
+                    [('A', 'X'), ('A', 'B'), ('X', 'B'), ('B', 'C'), ('C', 'Y')],
+                    [('X', 'Y', 'U_XY')])
+
+    P = mygID(Y=set(['Y']), X=set(["X"]), Z=frozenset([frozenset(), frozenset('B')]), P=Probability(var=G.V), G=G)
     print(f"ID: {P.printLatex()}")
+
+    
