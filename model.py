@@ -4,7 +4,6 @@ from itertools import product
 
 import functools
 import networkx as nx
-from pyvis.network import Network
 import numpy as np
 from typing import Dict, Iterable, Optional, Set, Sequence, AbstractSet
 from typing import FrozenSet, Tuple
@@ -495,6 +494,7 @@ class CausalDiagram:
 
         plt.show()
 
+CD = CausalDiagram
 
 class StructuralCausalModel:
     def __init__(self, G: CausalDiagram, F=None, P_U=None, D=None, more_U=None):
