@@ -8,7 +8,7 @@ class Probability:
     divisor is enabled.'''
 
     def __init__(self, var=set(), cond=set(), do=set(), recursive=False, children=set(), sumset=set(), fraction=False,
-                 divisor=None):
+                 divisor=None, scope: set = set()):
         self._var = var
         self._cond = cond
         self._do = do
@@ -18,8 +18,14 @@ class Probability:
         self._fraction = fraction
         self._divisor = divisor
 
+        # 기본적으로 scope를 var과 cond로 설정        
+        if not scope:
+            scope = self._var | self._cond
+        self._scope = scope
+        
     def copy(self):
-        return copy.deepcopy(self)
+        new_P = copy.deepcopy(self)
+        return new_P
 
     # GetAttributes
     @property
@@ -30,22 +36,28 @@ class Probability:
         out["cond"] = self._cond
         out["do"] = self._do
         out["recursive"] = self._recursive
+        
         if self._recursive:
             out["children"] = [child.attributes for child in self._children]
         else:
             out["children"] = self._children
+        
         out["sumset"] = self._sumset
         out["fraction"] = self._fraction
+        
         if self._fraction:
             out["divisor"] = self._divisor.attributes
         else:
             out["divisor"] = self._divisor
+
+        out["scope"] = self._scope
+
         return out
 
 
     def getFreeVariables(self) -> set:
         '''Function that returns the free variables of the distribution.'''
-        # condition아니고 summation할 변수도 아닌 나머지 변수들 
+        # Probability가 정의된 random variables return : (vars - sumset) & scope
 
         free = set()
         
@@ -56,11 +68,15 @@ class Probability:
                 free = free.union(prob.getFreeVariables())
         
         # summation할 변수는 제외. 
-        free = free.difference(self._sumset)
+        free = free - self._sumset
         
         # 분모에 있는 변수들도 추가
         if self._fraction:
             free = free.union(self._divisor.getFreeVariables()) 
+
+        # P가 정의된 변수들만 해당(cond에 있는 변수가 상수인 경우 제외)
+        free = free & self._scope
+
         return free
     
 
@@ -137,8 +153,7 @@ class Probability:
         return sorted(self._var)[0].__lt__(sorted(other._var)[0])
 
 
-    @staticmethod
-    # 출력할 때 W1을 w_1로 출력하기 위한 함수
+    @staticmethod # 출력할 때 W1을 w_1로 출력하기 위한 함수
     def underscore(input_set: frozenset):
         # Regular expression to find digits
         input_set = set(input_set)
@@ -211,9 +226,13 @@ class Probability:
 
 
 def get_new_probability(P, var, cond={}):
-    '''Function that returns a new probability object P_out with variabes var conditioned on cond from
-    the given probability P.'''
+    '''
+    Function that returns a new probability object P_out with variabes var conditioned on cond from
+    the given probability P.
 
+    ID 알고리즘 line 6, 7에서 cond에는 있지만 S'에 속하지 않는 변수는 Freevariables에서 제거해야 함
+
+    '''
     ## 그래프까지 받아서 dsep확인해서 추리는 동작을 넣어볼까? 여기에 넣을지 아니면 probability class에 넣을지 고민해봐야 함
 
     P_out = P.copy()
@@ -229,7 +248,7 @@ def get_new_probability(P, var, cond={}):
         P_out._fraction = True
         P_denom._sumset = P_denom._sumset | (P.getFreeVariables()- cond)
         P_out._divisor = P_denom
-        P_out.simplify(complete=False)
+        P_out.simplify(complete=False)  # complete true로 하면 분모랑 형태 달라져서 헷갈려서 그런가?
 
     return P_out
 
